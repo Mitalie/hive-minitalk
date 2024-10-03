@@ -31,6 +31,10 @@ normal operation.
 
 ## Approach A: bit signals with lost signal recovery
 
+### Design
+
+<details>
+
 Having two signals available naturally suggests sending one or the other
 depending on the bit to be sent, e.g. SIGUSR1 for bit 0 and SIGUSR2 for bit 1.
 For normal operation, the server requests next bit from the client with SIGUSR1.
@@ -97,62 +101,68 @@ check with `kill(pid, 0)` that the server hasn't been terminated.
 
 This doesn't leave the client a way to tell the server that it is finished.
 That needs to be communicated within the bitstream. Server can check for dead
-clients with `kill(pid, 0)`.
+clients with `kill(pid, 0)` if no signal is received for a time. Frozen clients
+that don't transmit can be dropped after a very long timeout - long enough that
+slow but functional clients aren't affected.
 
-### Summary and states
+</details>
 
-* Client starts in HELLO state
-* HELLO state
-   - Periodically send SIGUSR1
-   - SIGUSR1 transitions to SEND state
-   - SIGUSR2 transitions to QUEUE state
+### State machines
+
+#### Client
+
+* HELLO state (start)
+  * Periodically send SIGUSR1, exit if server not alive
+  * SIGUSR1: send first bit, transition to SEND
+  * SIGUSR2: transition to QUEUE
 * QUEUE state
-   - Periodically check server is alive, exit if not
-   - SIGUSR1 transitions to SEND state
+  * Periodically check if server is alive, exit if not
+  * SIGUSR1: defer to main loop to ensure pending SIGUSR2 handled, send first
+    bit, transition to SEND
+  * SIGUSR2: ignore
 * SEND state
-   - Send current bit
-   - SIGUSR1 moves to next bit and remaining in SEND state, sending it
-   - SIGUSR2 transitions to RETRY state
+  * SIGUSR1: send next bit
+  * SIGUSR2: resend last bit, transition to RETRY
 * RETRY state
-   - Repeat last sent bit
-   - SIGUSR1 transitions to RECOVER state
-   - SIGUSR2 remaining in RETRY state, repeating again
+  * SIGUSR1: defer to main loop to ensure pending SIGUSR2 handled, send opposite
+    of last bit, transition to RECOVER
+  * SIGUSR2: resend last bit
 * RECOVER state
-   - Send opposite of last sent bit
-   - SIGUSR1 moves to next bit and transitions to SEND state, sending it
-   - SIGUSR2 transitions to RETRY state, repeating the "opposite" bit
+  * SIGUSR1: send next bit, transition to SEND
+  * SIGUSR2: resend last bit, transition to RETRY
 
-* Server starts in IDLE state
-* IDLE state
-   - Signal introduces a new client, marks it active, and transitions to
-      RECEIVE state
-* RECEIVE state:
-   - Send SIGUSR1 to active client
-   - Signal from active client
-      - Interpret as bit
-      - Remain in RECEIVE state, sending another SIGUSR1
-   - Signal from other senders
-      - Respond with SIGUSR2 and add new client to queue
-      - Transition to CONFLICT state
-* CONFLICT state:
-   - Send SIGUSR2 to active client
-   - Signal from active client
-      - Interpret as bit
-      - Transition to FLUSH state
-   - Signal from other senders
-      - Respond with SIGUSR2 and add new client to queue
-      - Remain in CONFLICT state, sending another SIGUSR2
-* FLUSH state:
-   - Send SIGUSR1 to active client
-   - Signal from active client
-      - Ignore if same as last signal from active client
-      - Transition to RECEIVE state if different from last bit (ensure no more
-         pending signals)
-   - Signal from other senders
-      - Respond with SIGUSR2 and add new client to queue
-      - Transition to CONFLICT state
-* If active client is detected dead or bitstream is finished, remove the client
-  and select new active client, transiton to RECEIVE state.
+Server normally doesn't send SIGUSR2 to a client in QUEUE state, but it can
+happen if server sent SIGUSR1 and then detected conflict before client handled it.
+
+#### Server
+
+* IDLE state (start)
+  * SIGUSR1: set sender as active client, reply with SIGUSR1, transition to
+    RECEIVE
+  * SIGUSR2: ignore
+* All states except IDLE
+  * SIGUSR1 from sender other than active client: reply with SIGUSR2, add client
+    to queue, send SIGUSR2 to active client, transition to CONFLICT
+  * SIGUSR2 from sender other than active client: send SIGUSR2 to active client,
+    transition to CONFLICT
+* RECEIVE state
+  * SIGUSR1/2 from active client: interpret as data bit, reply with SIGUSR1
+* CONFLICT state
+  * SIGUSR1/2 from active client: interpret as data bit, reply with SIGUSR1,
+    transition to FLUSH
+* FLUSH state
+  * Signal from active client, duplicate of last signal: ignore
+  * Signal from active client, different: defer to main loop to ensure pending
+    duplicates handled, reply with SIGUSR1, transition to RECEIVE
+* If active client is not alive or bitstream is finished, select a queued client
+  as new active client, send SIGUSR1 to it, transition to RECEIVE. If queue is
+  empty, transition to IDLE.
+
+SIGUSR2 from any other sender than the active client can't be a valid client for
+this protocol so the sender is ignored. Active client is still informed of
+possible lost signal and goes through recovery procedure.
+
+### TODO - Repeated hello signals need to be flushed with an extra handshake step
 
 ## Approach B: data signal and control signal
 
