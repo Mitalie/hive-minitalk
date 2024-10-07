@@ -113,12 +113,12 @@ slow but functional clients aren't affected.
 
 * HELLO state (start)
   * Periodically send SIGUSR1, exit if server not alive
-  * SIGUSR1: send first bit, transition to SEND
+  * SIGUSR1: send SIGUSR2, transition to SEND
   * SIGUSR2: transition to QUEUE
 * QUEUE state
   * Periodically check if server is alive, exit if not
-  * SIGUSR1: defer to main loop to ensure pending SIGUSR2 handled, send first
-    bit, transition to SEND
+  * SIGUSR1: defer to main loop to ensure pending SIGUSR2 handled, send SIGUSR2,
+    transition to SEND
   * SIGUSR2: ignore
 * SEND state
   * SIGUSR1: send next bit
@@ -138,7 +138,7 @@ happen if server sent SIGUSR1 and then detected conflict before client handled i
 
 * IDLE state (start)
   * SIGUSR1: set sender as active client, reply with SIGUSR1, transition to
-    RECEIVE
+    FLUSH
   * SIGUSR2: ignore
 * All states except IDLE
   * SIGUSR1 from sender other than active client: reply with SIGUSR2, add client
@@ -155,14 +155,17 @@ happen if server sent SIGUSR1 and then detected conflict before client handled i
   * Signal from active client, different: defer to main loop to ensure pending
     duplicates handled, reply with SIGUSR1, transition to RECEIVE
 * If active client is not alive or bitstream is finished, select a queued client
-  as new active client, send SIGUSR1 to it, transition to RECEIVE. If queue is
+  as new active client, send SIGUSR1 to it, transition to FLUSH. If queue is
   empty, transition to IDLE.
+
+The client may have sent multiple SIGUSR1 before it receives the first reply
+from the server. To ensure these signals aren't confused for data bits, the
+server will start in FLUSH state and client will send SIGUSR2 before the first
+data bit.
 
 SIGUSR2 from any other sender than the active client can't be a valid client for
 this protocol so the sender is ignored. Active client is still informed of
 possible lost signal and goes through recovery procedure.
-
-### TODO - Repeated hello signals need to be flushed with an extra handshake step
 
 ## Approach B: data signal and control signal
 
