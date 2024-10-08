@@ -169,5 +169,30 @@ possible lost signal and goes through recovery procedure.
 
 ## Approach B: data signal and control signal
 
-### TODO
+### Design
+
+With the restriction that new clients introduce themselves with SIGUSR1, making
+SIGUSR2 reliable, we can come up with an alternative approach that avoids the
+complex recovery state machine. We can communicate bits (and optionally other
+symbols like end-of-transmission) by sending different numbers of SIGUSR2,
+delimited by SIGUSR1. Each signal sent by the client must be confirmed by the
+server with SIGUSR1 before the client can send the next one.
+
+If the server receives SIGUSR1 from another client, it informs the active client
+of potential conflict with SIGUSR2. If the client is waiting for confirmation of
+SIGUSR1, it will re-send SIGUSR1 just in case the previous one got lost.
+Otherwise, the client doesn't need to do anything.
+
+If the server detected potential conflict, there may now be duplicate SIGUSR1
+incoming from the client. As soon as one of them arrives, server confirms the
+reception to the client. Any duplicates without intervening SIGUSR2 must then be
+ignored. The client can send SIGUSR2 as soon as it receives the confirmation,
+even though there are still pending SIGUSR1 on the server. Because order of
+handling multiple pending signals is unspecified, the server must ignore any
+additional SIGUSR1 and not confirm the received SIGUSR2 until all pending
+signals are handled and normal execution continues.
+
+This approach is much simpler, but downside is that it needs 2.5 signals per bit
+(1 or 2 SIGUSR2, delimited by 1 SIGUSR1) even when there are no conflicts, while
+approach A only needs 1 signal per bit if no conflict/recovery is triggered.
 
