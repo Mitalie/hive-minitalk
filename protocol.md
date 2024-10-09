@@ -201,3 +201,40 @@ approach A only needs 1 signal per bit if no conflict/recovery is triggered.
 Sending two bits at a time with 1-4 SIGUSR2 could bring the average down to 3.5
 signals per two bits or 1.75 signals per bit, but longer groups offer no further
 improvement (three bits: 5.5 s / 3 b = 1.8333 s/b).
+
+## Bitstream protocol
+
+The signal protocols above can transmit a sequence of bits. The data we want to
+transfer from is a sequence of bytes, which we must break down into individual
+bits and reconstruct again on the server. Signal protocol A also requires an
+in-band end-of-transmission marker.
+
+The actual requirement of the assignment is passing a single message which the
+client knows in its entirety before sending, and which the server should receive
+in its entirety before outputting. The message is passed to the client as
+argument, which means it can't contain embedded null characters. We can simply
+send each byte of the message in a specific bit order, and the null character at
+the end of the string can mark end of transmission.
+
+It is also possible to design a much more interesting protocol. Sending length
+before a block of data makes the protocol agnostic to embedded null characters.
+Simplest way to send length is to send fixed number of bits in a specific bit
+order, with N bits allowing for maximum message length of 2^N (or 2^N-1 if zero
+length is allowed). A variable-length encoding could be used to avoid imposing a
+maximum message length. Because we transport a bitstream, the encoding itself is
+not limited to byte-sized units.
+
+The protocol also doesn't need to implicitly end transmission after one block.
+By prepeding each block with a control symbol, we can transmit multiple blocks
+one after another, reducing or removing the need for arbitrarily large blocks.
+This could allow the system to handle potentially infinite streams of data
+without needing to see the entire message first, e.g. transporting from stdin of
+client to stdout of server. Separate control symbol is defined for closing the
+connection, and another can be defined for yielding to other clients and
+resuming later.
+
+With signal protocol B, control symbols can be defined on that level instead,
+although only a limited number is reasonable as each additional symbol needs
+linearly more signals to transmit due to being limited to SIGUSR2 only. Symbols
+at the bitstream level can use both 0 and 1 bits, so their length grows
+logarithmically.
