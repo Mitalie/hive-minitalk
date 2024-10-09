@@ -29,7 +29,7 @@ procedure that can distinguish or discard the possibly-lost signal if it arrives
 after all, and ensure the client and server return to a consistent state for
 normal operation.
 
-## Approach A: bit signals with lost signal recovery
+## Signal protocol, approach A: bit signals with lost signal recovery
 
 ### Design
 
@@ -167,7 +167,7 @@ SIGUSR2 from any other sender than the active client can't be a valid client for
 this protocol so the sender is ignored. Active client is still informed of
 possible lost signal and goes through recovery procedure.
 
-## Approach B: data signal and control signal
+## Signal protocol, approach B: data signal and control signal
 
 ### Design
 
@@ -175,8 +175,11 @@ With the restriction that new clients introduce themselves with SIGUSR1, making
 SIGUSR2 reliable, we can come up with an alternative approach that avoids the
 complex recovery state machine. We can communicate bits (and optionally other
 symbols like end-of-transmission) by sending different numbers of SIGUSR2,
-delimited by SIGUSR1. Each signal sent by the client must be confirmed by the
-server with SIGUSR1 before the client can send the next one.
+delimited by SIGUSR1. Just like approach A, each signal sent by the client must
+be confirmed by the server with SIGUSR1 before the client can send the next one,
+and the hello signal may be confirmed with SIGUSR2 to tell the client that it is
+placed in a queue until the server is free and requests start of transmission
+with SIGUSR1.
 
 If the server receives SIGUSR1 from another client, it informs the active client
 of potential conflict with SIGUSR2. If the client is waiting for confirmation of
@@ -195,4 +198,6 @@ signals are handled and normal execution continues.
 This approach is much simpler, but downside is that it needs 2.5 signals per bit
 (1 or 2 SIGUSR2, delimited by 1 SIGUSR1) even when there are no conflicts, while
 approach A only needs 1 signal per bit if no conflict/recovery is triggered.
-
+Sending two bits at a time with 1-4 SIGUSR2 could bring the average down to 3.5
+signals per two bits or 1.75 signals per bit, but longer groups offer no further
+improvement (three bits: 5.5 s / 3 b = 1.8333 s/b).
