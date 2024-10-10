@@ -113,23 +113,28 @@ slow but functional clients aren't affected.
 
 * HELLO state (start)
   * Periodically send SIGUSR1, exit if server not alive
-  * SIGUSR1: send SIGUSR2, transition to SEND
+  * SIGUSR1: transition to SEND
   * SIGUSR2: transition to QUEUE
 * QUEUE state
   * Periodically check if server is alive, exit if not
-  * SIGUSR1: defer to main loop to ensure pending SIGUSR2 handled, send SIGUSR2,
-    transition to SEND
+  * SIGUSR1: transition to START
   * SIGUSR2: ignore
+* START state
+  * Send SIGUSR2, wait for signal
+  * SIGUSR1: transition to SEND
+  * SIGUSR2: transition to RETRY
 * SEND state
-  * SIGUSR1: send next bit
-  * SIGUSR2: resend last bit, transition to RETRY
+  * Send next bit, wait for signal, repeat
+  * SIGUSR1: ignore
+  * SIGUSR2: transition to RETRY
 * RETRY state
-  * SIGUSR1: defer to main loop to ensure pending SIGUSR2 handled, send opposite
-    of last bit, transition to RECOVER
-  * SIGUSR2: resend last bit
+  * Resend last bit, wait for signal, repeat
+  * SIGUSR1: transition to RECOVER
+  * SIGUSR2: ignore
 * RECOVER state
-  * SIGUSR1: send next bit, transition to SEND
-  * SIGUSR2: resend last bit, transition to RETRY
+  * Send opposite of last bit, wait for signal
+  * SIGUSR1: transition to SEND
+  * SIGUSR2: transition to RETRY
 
 Server normally doesn't send SIGUSR2 to a client in QUEUE state, but it can
 happen if server sent SIGUSR1 and then detected conflict before client handled it.
@@ -137,30 +142,34 @@ happen if server sent SIGUSR1 and then detected conflict before client handled i
 #### Server
 
 * IDLE state (start)
-  * SIGUSR1: set sender as active client, reply with SIGUSR1, transition to
-    FLUSH
+  * Wait for signal
+  * SIGUSR1: set sender as active client, transition to FLUSH1
   * SIGUSR2: ignore
-* All states except IDLE
-  * SIGUSR1 from sender other than active client: reply with SIGUSR2, add client
-    to queue, send SIGUSR2 to active client, transition to CONFLICT
-  * SIGUSR2 from sender other than active client: send SIGUSR2 to active client,
-    transition to CONFLICT
 * RECEIVE state
-  * SIGUSR1/2 from active client: interpret as data bit, reply with SIGUSR1
+  * Send SIGUSR1 to active client, wait for signal, repeat
+  * SIGUSR1/2 from active client: interpret as data bit
 * CONFLICT state
-  * SIGUSR1/2 from active client: interpret as data bit, reply with SIGUSR1,
-    transition to FLUSH
-* FLUSH state
-  * Signal from active client, duplicate of last signal: ignore
-  * Signal from active client, different: defer to main loop to ensure pending
-    duplicates handled, reply with SIGUSR1, transition to RECEIVE
-* If active client is not alive or bitstream is finished, select a queued client
-  as new active client, send SIGUSR1 to it, transition to FLUSH. If queue is
-  empty, transition to IDLE.
+  * Send SIGUSR2 to active client, wait for signal, repeat
+  * SIGUSR1 from active client: interpret as data bit, transition to FLUSH1
+  * SIGUSR2 from active client: interpret as data bit, transition to FLUSH2
+* FLUSH1 state
+  * Send SIGUSR1 to active client, wait for signal
+  * SIGUSR1 from active client: ignore
+  * SIGUSR2 from active client: transition to RECEIVE
+* FLUSH2 state
+  * Send SIGUSR1 to active client, wait for signal
+  * SIGUSR1 from active client: transition to RECEIVE
+  * SIGUSR2 from active client: ignore
+* Signal from sender other than active client, all states except IDLE
+  * SIGUSR1: reply with SIGUSR2, add client to queue, transition to CONFLICT
+  * SIGUSR2: transition to CONFLICT
+* If active client is not alive or bitstream is finished, select a new active
+  client from queue, transition to FLUSH1. If queue is empty, transition to
+  IDLE.
 
 The client may have sent multiple SIGUSR1 before it receives the first reply
 from the server. To ensure these signals aren't confused for data bits, the
-server will start in FLUSH state and client will send SIGUSR2 before the first
+server will start in FLUSH1 state and client will send SIGUSR2 before the first
 data bit.
 
 SIGUSR2 from any other sender than the active client can't be a valid client for
