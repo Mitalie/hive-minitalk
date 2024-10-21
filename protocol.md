@@ -1,39 +1,115 @@
 # Minitalk
 
-Assignment requires client to send a string to a server with specified PID using
-SIGUSR1 and SIGUSR2. The server has to print the string and (for bonus) confirm
-the reception with a signal to the client.
+Assignment requires a client program to send a string to a server process with
+specified PID using Unix signals SIGUSR1 and SIGUSR2. The server has to print
+the string and (for bonus) confirm the reception with a signal to the client.
 
-Signals are delivered to the receiving process asynchronously and without
-queuing. Multiple signals with the same signal number might execute the handler
-only once, and multiple different signals may execute their handlers in any
-order. Timed delays between sending signals can make signals consistent most of
-the time, but there is no guaranteed deadline to ensure the receiving process
-has handled the signal. The only reliable solution requires sending a signal
-back to confirm the reception.
+## Signal considerations
 
-Presence of multiple clients further complicates the matter. Server knows which
-process ID sent the signal being handled, but if multiple clients send the same
-signal the server's signal handler might run only once and lose the additional
-signals. We can minimize the chance of this happening by only allowing one
-client to send at a time and have the rest wait for permission from the server,
-but each client must send at least one unsolicited signal to make the server
-aware of it.
+### Signal handler safety
 
-There are ways to detect a possibly lost signal - timeout on client waiting for
-confirmation, timeout on server waiting for the next signal after confirming the
-previous one, or detection on server when receiving a signal from a different
-client than expected. None of these mean the signal is lost for certain - it
-might still arrive after the detection. Therefore there needs to be a recovery
-procedure that can distinguish or discard the possibly-lost signal if it arrives
-after all, and ensure the client and server return to a consistent state for
-normal operation.
+Signal handlers interrupt the normal flow of execution to run the handler code.
+This can happen *at any time*, including in the middle of a library function, in
+the middle of access to complex variable, and even during another signal handler
+if the new signal is not blocked. Signal handlers must be written carefully to
+avoid corrupting the program state by accessing resources at the wrong time.
 
-## Signal protocol, approach A: bit signals with lost signal recovery
+POSIX specifies undefined behavior when calling library functions other than
+those listed as async-signal-safe or when referring to any global or static
+objects except `errno` and writes to objects of type `volatile sig_atomic_t`.
+Non-exotic implementations usually allow more freedom with functions when no
+unsafe function is being interrupted, and don't restrict memory access, but
+leave it to the programmer to ensure safety and consistency.
 
-### Design
+### Signal reliability with rapid sending
+
+External signals are delivered to the receiving process asynchronously and
+without queuing. Multiple signals with the same signal number might execute the
+handler only once, and multiple different signals may execute their handlers in
+any order. Timed delays between sent signals can make delivery seem consistent,
+but there is no guaranteed deadline to ensure the receiving process has handled
+the signal - it could block inside the signal handler, or be in uninterruptible
+sleep, or simply have to wait for CPU time in a busy system. The only reliable
+method is waiting for confirmation or permission before sending the next signal.
+
+### Signal reliability with multiple senders
+
+Presence of multiple senders further complicates the matter. The receiving
+process can check the process ID that sent the signal, but if different senders
+send the same signal the signal handler might run only once and not know about
+the other senders. We can minimize the chance of this happening by only allowing
+one client to send at a time and have the rest wait for permission from the
+server, but each client must send at least one unsolicited signal to make the
+server aware of it.
+
+There are ways to detect a possibly lost signal - timeout on the client waiting
+for a confirmation, timeout on the server waiting for a signal after requesting
+one, or assuming loss when receiving a signal from a different sender than
+expected. None of these mean the signal is lost for certain - it might arrive
+and be handled after the detection was triggered. There needs to be a recovery
+process that can distinguish or discard the possibly-lost signal if it actually
+arrives and ensure client and server return to a consistent state for normal
+operation.
+
+## Restrictions
+
+The assignment specifies that each program can use only one global variable, and
+for strict POSIX conformance it must be of type `volatile sig_atomic_t`.  POSIX
+allows `sig_atomic_t` to be smaller than `pid_t`, making it impossible to
+communicate the process ID of the signal sender out of the signal handler with a
+single variable unless an array is acceptable. This means we have to respond to
+each signal within the handler. However, we can't process the incoming data in
+the handler due to not being able to read a buffer with the previously received
+bits, and must do that in the normal flow of execution. This creates a timing
+window where the client sends next signal and the handler runs again before the
+normal flow of execution can process the previous one. We have to loosen at
+least one restriction to make a reliable solution for even a single client:
+
+* Use an array of `volatile sig_atomic_t` to communicate signal info to normal
+  flow of execution, making it possible to handle received data before replying.
+* Instead of strict POSIX, assume PID can be stored in `sig_atomic_t` and use
+  the sign bit to distinguish SIGUSR1 and SIGUSR2, achieving same as above.
+* Rely on potentially unreliable timed sending to transmit the client PID in the
+  datastream, allowing the server's normal code to learn it without
+  communicating it out of the signal handler.
+* Instead of strict POSIX, assume an implementation that doesn't restrict memory
+  access in signal handlers, allowing us to either process data in the handler
+  or communicate all the necessary information out of it.
+
+Processing data entirely within the signal handler requires memory allocation,
+which is unsafe in a complex program as it risks corrupting the allocator's
+static data structures. In this project the server does nothing besides handling
+signals so we could ensure that the signal handler doesn't interrupt allocator
+functions, but passing data out of the handler is more generally applicable.
+
+## Minimal solution
+
+Simultaneous clients or external disturbances are not taken into account, so
+SIGUSR1 and SIGUSR2 can be considered reliable as long as client waits for
+confirmation. Server's signal handlers will store the PID of the sender in a
+global variable, negated if the signal was SIGUSR2. Server's normal code reads
+the variable, and if non-zero, resets it to zero, interprets the received signal
+as a bit, and replies to the sender with SIGUSR1. Server sleeps for a short time
+and repeats checking the variable.
+
+To avoid ugly reallocs on the server as more of the message is received, the
+bitstream begins with the message length as `size_t`, most significant bit
+first. After receiving the length, the server allocates a buffer for the
+message. The length is followed by the message contents as a sequence of `char`,
+most significant bit first. No null terminator is included. After the entire
+message is received, server prints it, releases the buffer, and is ready to
+receive another length-prefixed message, possibly from a different client.
+
+## Additional ideas
+
+These ideas might be useful for supporting multiple simultaneous clients, or for
+a more flexible data transfer protocol than single message of known length, but
+they aren't fully applicable within the limits of the assignment.
 
 <details>
+<summary>Signal protocol, approach A</summary>
+
+## Signal protocol, approach A: bit signals with lost signal recovery
 
 Having two signals available naturally suggests sending one or the other
 depending on the bit to be sent, e.g. SIGUSR1 for bit 0 and SIGUSR2 for bit 1.
@@ -105,8 +181,6 @@ clients with `kill(pid, 0)` if no signal is received for a time. Frozen clients
 that don't transmit can be dropped after a very long timeout - long enough that
 slow but functional clients aren't affected.
 
-</details>
-
 ### State machines
 
 #### Client
@@ -137,7 +211,8 @@ slow but functional clients aren't affected.
   * SIGUSR2: transition to RETRY
 
 Server normally doesn't send SIGUSR2 to a client in QUEUE state, but it can
-happen if server sent SIGUSR1 and then detected conflict before client handled it.
+happen if server sent SIGUSR1 and then detected conflict before the client
+handled it.
 
 #### Server
 
@@ -176,9 +251,12 @@ SIGUSR2 from any other sender than the active client can't be a valid client for
 this protocol so the sender is ignored. Active client is still informed of
 possible lost signal and goes through recovery procedure.
 
-## Signal protocol, approach B: data signal and control signal
+</details>
 
-### Design
+<details>
+<summary>Signal protocol, approach B</summary>
+
+## Signal protocol, approach B: data signal and control signal
 
 With the restriction that new clients introduce themselves with SIGUSR1, making
 SIGUSR2 reliable, we can come up with an alternative approach that avoids the
@@ -210,6 +288,11 @@ approach A only needs 1 signal per bit if no conflict/recovery is triggered.
 Sending two bits at a time with 1-4 SIGUSR2 could bring the average down to 3.5
 signals per two bits or 1.75 signals per bit, but longer groups offer no further
 improvement (three bits: 5.5 s / 3 b = 1.8333 s/b).
+
+</details>
+
+<details>
+<summary>Bitstream protocol</summary>
 
 ## Bitstream protocol
 
@@ -247,3 +330,5 @@ although only a limited number is reasonable as each additional symbol needs
 linearly more signals to transmit due to being limited to SIGUSR2 only. Symbols
 at the bitstream level can use both 0 and 1 bits, so their length grows
 logarithmically.
+
+</details>
