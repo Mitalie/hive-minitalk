@@ -6,7 +6,7 @@
 #    By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/09/26 13:32:33 by amakinen          #+#    #+#              #
-#    Updated: 2024/09/26 13:39:30 by amakinen         ###   ########.fr        #
+#    Updated: 2024/10/21 17:09:34 by amakinen         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,6 +22,7 @@ SRCS_C := $(addprefix $(SRCDIR)/,\
 )
 SRCS_S := $(addprefix $(SRCDIR)/,\
 	server_main.c \
+	server_data.c \
 )
 OBJS_C := $(SRCS_C:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 OBJS_S := $(SRCS_S:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
