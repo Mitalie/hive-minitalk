@@ -6,7 +6,7 @@
 #    By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/09/26 13:32:33 by amakinen          #+#    #+#              #
-#    Updated: 2024/10/21 17:09:34 by amakinen         ###   ########.fr        #
+#    Updated: 2024/10/22 14:30:59 by amakinen         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -24,12 +24,16 @@ SRCS_S := $(addprefix $(SRCDIR)/,\
 	server_main.c \
 	server_data.c \
 )
+SRCS_SHARED := $(addprefix $(SRCDIR)/,\
+	signals.c \
+)
 OBJS_C := $(SRCS_C:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 OBJS_S := $(SRCS_S:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
-OBJS := $(OBJS_C) $(OBJS_S)
+OBJS_SHARED := $(SRCS_SHARED:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
+OBJS := $(OBJS_C) $(OBJS_S) $(OBJS_SHARED)
 BINS := client server
-client: $(OBJS_C)
-server: $(OBJS_S)
+client: $(OBJS_C) $(OBJS_SHARED)
+server: $(OBJS_S) $(OBJS_SHARED)
 $(NAME): client server
 .PHONY: $(NAME)
 
