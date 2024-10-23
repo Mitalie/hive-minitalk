@@ -6,13 +6,13 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:50 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/22 15:48:06 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/23 14:51:45 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include <stdio.h>
 #include <unistd.h>
-#include "server_data.h"
+#include "receive.h"
 #include "signals.h"
 
 int	main(void)

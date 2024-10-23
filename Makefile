@@ -6,7 +6,7 @@
 #    By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/09/26 13:32:33 by amakinen          #+#    #+#              #
-#    Updated: 2024/10/22 14:30:59 by amakinen         ###   ########.fr        #
+#    Updated: 2024/10/23 14:52:01 by amakinen         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -22,7 +22,7 @@ SRCS_C := $(addprefix $(SRCDIR)/,\
 )
 SRCS_S := $(addprefix $(SRCDIR)/,\
 	server_main.c \
-	server_data.c \
+	receive.c \
 )
 SRCS_SHARED := $(addprefix $(SRCDIR)/,\
 	signals.c \

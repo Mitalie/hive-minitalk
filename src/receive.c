@@ -6,11 +6,11 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/21 16:48:00 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/21 17:08:51 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/23 14:34:00 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include "server_data.h"
+#include "receive.h"
 #include <limits.h>
 #include <stdlib.h>
 #include <unistd.h>
