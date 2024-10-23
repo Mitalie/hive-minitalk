@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/22 14:29:57 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/23 16:37:58 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/23 16:44:32 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,7 +78,7 @@ void	set_signal_handler(void)
 	otherwise a signal arriving between the read and the write will get lost.
 */
 
-sig_atomic_t	wait_for_signal_data(void)
+t_signal_data	wait_for_signal_data(void)
 {
 	sig_atomic_t	data;
 
@@ -89,7 +89,16 @@ sig_atomic_t	wait_for_signal_data(void)
 		data = g_sig_data;
 	}
 	g_sig_data = 0;
-	return (data);
+	if (data > 0)
+		return ((t_signal_data){
+			.bit = 0,
+			.sender = data,
+		});
+	else
+		return ((t_signal_data){
+			.bit = 1,
+			.sender = -data,
+		});
 }
 
 void	send_bit(pid_t recipient, bool bit)

@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:50 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/23 16:39:03 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/23 16:44:34 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,7 +17,7 @@
 
 int	main(void)
 {
-	sig_atomic_t	sig_data;
+	t_signal_data	sig_data;
 	t_server_data	server_data;
 
 	printf("%d\n", getpid());
@@ -26,15 +26,7 @@ int	main(void)
 	while (1)
 	{
 		sig_data = wait_for_signal_data();
-		if (sig_data > 0)
-		{
-			server_data_receive(&server_data, 0);
-			send_bit(sig_data, 0);
-		}
-		if (sig_data < 0)
-		{
-			server_data_receive(&server_data, 1);
-			send_bit(-sig_data, 0);
-		}
+		server_data_receive(&server_data, sig_data.bit);
+		send_bit(sig_data.sender, 0);
 	}
 }
