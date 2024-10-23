@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   server_data.c                                      :+:      :+:    :+:   */
+/*   receive.c                                          :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/21 16:48:00 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/23 14:34:00 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/23 16:50:09 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -15,23 +15,23 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-void	server_data_init(t_server_data *data)
+void	receive_init(t_receive_state *data)
 {
 	data->buf = NULL;
-	server_data_reset(data);
+	receive_reset(data);
 }
 
-void	server_data_reset(t_server_data *data)
+void	receive_reset(t_receive_state *data)
 {
 	free(data->buf);
-	*data = (t_server_data){0};
+	*data = (t_receive_state){0};
 }
 
-void	server_data_receive(t_server_data *data, char bit)
+void	receive_bit(t_receive_state *data, bool bit)
 {
 	if (data->len_bit_pos < sizeof(data->len) * CHAR_BIT)
 	{
-		data->len = (data->len << 1) | !!bit;
+		data->len = (data->len << 1) | bit;
 		data->len_bit_pos++;
 		if (data->len_bit_pos == sizeof(data->len) * CHAR_BIT)
 			data->buf = malloc(data->len);
@@ -39,7 +39,7 @@ void	server_data_receive(t_server_data *data, char bit)
 	}
 	if (data->byte_pos < data->len && data->buf)
 	{
-		data->buf[data->byte_pos] = (data->buf[data->byte_pos] << 1) | !!bit;
+		data->buf[data->byte_pos] = (data->buf[data->byte_pos] << 1) | bit;
 		data->bit_pos++;
 		if (data->bit_pos == CHAR_BIT)
 		{
@@ -50,6 +50,6 @@ void	server_data_receive(t_server_data *data, char bit)
 	if (data->byte_pos == data->len)
 	{
 		write(STDOUT_FILENO, data->buf, data->len);
-		server_data_reset(data);
+		receive_reset(data);
 	}
 }
