@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/22 14:29:57 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/22 16:05:34 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/23 16:37:58 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -90,4 +90,12 @@ sig_atomic_t	wait_for_signal_data(void)
 	}
 	g_sig_data = 0;
 	return (data);
+}
+
+void	send_bit(pid_t recipient, bool bit)
+{
+	if (bit)
+		kill(recipient, SIGUSR2);
+	else
+		kill(recipient, SIGUSR1);
 }

@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:47 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/22 15:46:30 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/23 16:38:17 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,18 +22,18 @@ static void	send_len_bit(pid_t server, char *len_bit, size_t len)
 {
 	(*len_bit)--;
 	if (len & (1l << *len_bit))
-		kill(server, SIGUSR2);
+		send_bit(server, 1);
 	else
-		kill(server, SIGUSR1);
+		send_bit(server, 0);
 }
 
 static void	send_message_bit(pid_t server, char *bit, char **msg, size_t *len)
 {
 	(*bit)--;
 	if (**msg & (1 << *bit))
-		kill(server, SIGUSR2);
+		send_bit(server, 1);
 	else
-		kill(server, SIGUSR1);
+		send_bit(server, 0);
 	if (*bit == 0)
 	{
 		*bit = CHAR_BIT;

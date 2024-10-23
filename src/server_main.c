@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:50 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/23 14:51:45 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/23 16:39:03 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,12 +29,12 @@ int	main(void)
 		if (sig_data > 0)
 		{
 			server_data_receive(&server_data, 0);
-			kill(sig_data, SIGUSR1);
+			send_bit(sig_data, 0);
 		}
 		if (sig_data < 0)
 		{
 			server_data_receive(&server_data, 1);
-			kill(-sig_data, SIGUSR1);
+			send_bit(-sig_data, 0);
 		}
 	}
 }
