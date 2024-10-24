@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/22 14:29:57 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/23 16:44:32 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/24 16:47:01 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -35,7 +35,7 @@ static void	signal_handler(int sig, siginfo_t *info, void *ucontext)
 		g_sig_data = -info->si_pid;
 }
 
-void	set_signal_handler(void)
+void	signals_set_handler(void)
 {
 	struct sigaction	act;
 
@@ -78,7 +78,7 @@ void	set_signal_handler(void)
 	otherwise a signal arriving between the read and the write will get lost.
 */
 
-t_signal_data	wait_for_signal_data(void)
+t_signal_data	signals_wait_for_data(void)
 {
 	sig_atomic_t	data;
 
@@ -101,7 +101,7 @@ t_signal_data	wait_for_signal_data(void)
 		});
 }
 
-void	send_bit(pid_t recipient, bool bit)
+void	signals_send_bit(pid_t recipient, bool bit)
 {
 	if (bit)
 		kill(recipient, SIGUSR2);
