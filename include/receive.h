@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/21 16:40:04 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/24 17:25:18 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/24 17:32:12 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,7 +27,7 @@ typedef struct s_receive_state
 
 void	receive_init(t_receive_state *state);
 void	receive_reset(t_receive_state *state);
-void	receive_bit(t_receive_state *state, bool bit);
+void	receive_add_bit(t_receive_state *state, bool bit);
 bool	receive_done(t_receive_state *state);
 
 #endif
