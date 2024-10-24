@@ -6,50 +6,54 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/21 16:48:00 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/23 16:50:09 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/24 15:56:27 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "receive.h"
 #include <limits.h>
 #include <stdlib.h>
-#include <unistd.h>
 
-void	receive_init(t_receive_state *data)
+void	receive_init(t_receive_state *state)
 {
-	data->buf = NULL;
-	receive_reset(data);
+	state->buf = NULL;
+	receive_reset(state);
 }
 
-void	receive_reset(t_receive_state *data)
+void	receive_reset(t_receive_state *state)
 {
-	free(data->buf);
-	*data = (t_receive_state){0};
+	free(state->buf);
+	state->len = 0;
+	state->len_bit_remaining = sizeof(state->len) * CHAR_BIT;
+	state->byte_idx = 0;
+	state->bit_idx = 0;
 }
 
-void	receive_bit(t_receive_state *data, bool bit)
+void	receive_bit(t_receive_state *state, bool bit)
 {
-	if (data->len_bit_pos < sizeof(data->len) * CHAR_BIT)
+	if (state->len_bit_remaining > 0)
 	{
-		data->len = (data->len << 1) | bit;
-		data->len_bit_pos++;
-		if (data->len_bit_pos == sizeof(data->len) * CHAR_BIT)
-			data->buf = malloc(data->len);
-		return ;
+		state->len = (state->len << 1) | bit;
+		state->len_bit_remaining--;
+		if (state->len_bit_remaining == 0)
+			state->buf = malloc(state->len);
 	}
-	if (data->byte_pos < data->len && data->buf)
+	else if (state->byte_idx < state->len)
 	{
-		data->buf[data->byte_pos] = (data->buf[data->byte_pos] << 1) | bit;
-		data->bit_pos++;
-		if (data->bit_pos == CHAR_BIT)
+		if (state->buf)
+			state->buf[state->byte_idx]
+				= (state->buf[state->byte_idx] << 1) | bit;
+		state->bit_idx++;
+		if (state->bit_idx == CHAR_BIT)
 		{
-			data->byte_pos++;
-			data->bit_pos = 0;
+			state->byte_idx++;
+			state->bit_idx = 0;
 		}
 	}
-	if (data->byte_pos == data->len)
-	{
-		write(STDOUT_FILENO, data->buf, data->len);
-		receive_reset(data);
-	}
+}
+
+bool	receive_done(t_receive_state *state)
+{
+	return (state->len_bit_remaining == 0
+		&& state->byte_idx == state->len);
 }

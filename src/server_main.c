@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:50 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/23 16:49:40 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/24 15:56:01 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,6 +27,11 @@ int	main(void)
 	{
 		sig_data = wait_for_signal_data();
 		receive_bit(&receive_state, sig_data.bit);
+		if (receive_done(&receive_state))
+		{
+			write(STDOUT_FILENO, receive_state.buf, receive_state.len);
+			receive_reset(&receive_state);
+		}
 		send_bit(sig_data.sender, 0);
 	}
 }
