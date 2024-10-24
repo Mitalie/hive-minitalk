@@ -1,23 +1,23 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   util.h                                             :+:      :+:    :+:   */
+/*   util_strlen.c                                      :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/10/24 16:04:01 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/24 17:47:26 by amakinen         ###   ########.fr       */
+/*   Created: 2024/10/24 17:38:59 by amakinen          #+#    #+#             */
+/*   Updated: 2024/10/24 17:41:42 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#ifndef UTIL_H
-# define UTIL_H
+#include "util.h"
 
-# include <stdbool.h>
-# include <stddef.h>
+size_t	util_strlen(const char *str)
+{
+	size_t	len;
 
-bool	util_parse_int(const char *str, int *value_out);
-size_t	util_strlen(const char *str);
-void	util_write_int(int n, int fd);
-
-#endif
+	len = 0;
+	while (*str++)
+		len++;
+	return (len);
+}
