@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/21 16:48:00 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/24 17:32:12 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/24 17:33:25 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -23,6 +23,7 @@ void	receive_init(t_receive_state *state)
 void	receive_reset(t_receive_state *state)
 {
 	free(state->buf);
+	state->buf = NULL;
 	state->len = 0;
 	state->len_bit_remaining = sizeof(state->len) * CHAR_BIT;
 	state->byte_idx = 0;
