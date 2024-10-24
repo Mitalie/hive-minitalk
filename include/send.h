@@ -1,36 +1,32 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   client_main.c                                      :+:      :+:    :+:   */
+/*   send.h                                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2024/09/26 13:39:47 by amakinen          #+#    #+#             */
+/*   Created: 2024/10/24 16:16:27 by amakinen          #+#    #+#             */
 /*   Updated: 2024/10/24 16:53:30 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
-#include <stdbool.h>
-#include <stdlib.h>
-#include <string.h>
-#include "send.h"
-#include "signals.h"
+#ifndef SEND_H
+# define SEND_H
 
-int	main(int argc, char *argv[])
+# include <stdbool.h>
+# include <stddef.h>
+
+typedef struct s_send_state
 {
-	pid_t			server;
-	t_send_state	send_state;
-	bool			bit;
+	size_t				len;
+	size_t				byte_idx;
+	unsigned char		bit_idx;
+	unsigned char		len_bit_remaining;
+	const unsigned char	*buf;
+}	t_send_state;
 
-	if (argc < 3)
-		return (1);
-	server = atoi(argv[1]);
-	send_init(&send_state, (unsigned char *)argv[2], strlen(argv[2]));
-	signals_set_handler();
-	while (!send_done(&send_state))
-	{
-		bit = send_get_bit(&send_state);
-		signals_send_bit(server, bit);
-		signals_wait_for_data();
-	}
-}
+void	send_init(t_send_state *state, const unsigned char *buf, size_t len);
+bool	send_get_bit(t_send_state *state);
+bool	send_done(t_send_state *state);
+
+#endif
