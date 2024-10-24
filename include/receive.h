@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/21 16:40:04 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/24 15:57:07 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/24 17:25:18 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,7 +20,7 @@ typedef struct s_receive_state
 {
 	size_t			len;
 	size_t			byte_idx;
-	unsigned char	bit_idx;
+	unsigned char	byte_bit_remaining;
 	unsigned char	len_bit_remaining;
 	unsigned char	*buf;
 }	t_receive_state;
