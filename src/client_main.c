@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:47 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/24 17:49:19 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/28 14:57:28 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,6 +19,7 @@ int	main(int argc, char *argv[])
 {
 	pid_t			server;
 	t_send_state	send_state;
+	t_signal_data	signal_data;
 	bool			bit;
 
 	if (argc < 3)
@@ -31,6 +32,10 @@ int	main(int argc, char *argv[])
 	{
 		bit = send_get_bit(&send_state);
 		signals_send_bit(server, bit);
-		signals_wait_for_data();
+		signal_data = signals_wait_for_data();
+		if (signal_data.sender != server)
+			return (3);
+		if (signal_data.bit == 1)
+			return (4);
 	}
 }
