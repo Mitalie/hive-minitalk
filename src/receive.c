@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/21 16:48:00 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/24 17:33:25 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/29 14:19:16 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -30,14 +30,20 @@ void	receive_reset(t_receive_state *state)
 	state->byte_bit_remaining = CHAR_BIT;
 }
 
-void	receive_add_bit(t_receive_state *state, bool bit)
+/*
+	Returns true on success, false on malloc error.
+*/
+bool	receive_add_bit(t_receive_state *state, bool bit)
 {
 	if (state->len_bit_remaining > 0)
 	{
 		state->len = (state->len << 1) | bit;
 		state->len_bit_remaining--;
 		if (state->len_bit_remaining == 0)
+		{
 			state->buf = malloc(state->len);
+			return (state->buf != NULL);
+		}
 	}
 	else if (state->byte_idx < state->len)
 	{
@@ -51,6 +57,7 @@ void	receive_add_bit(t_receive_state *state, bool bit)
 			state->byte_bit_remaining = CHAR_BIT;
 		}
 	}
+	return (true);
 }
 
 bool	receive_done(t_receive_state *state)
