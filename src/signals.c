@@ -6,13 +6,14 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/22 14:29:57 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/30 16:31:42 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/30 17:28:11 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "signals.h"
 #include <signal.h>
 #include <unistd.h>
+#include <stdio.h>
 
 static volatile sig_atomic_t	g_sig_data;
 
@@ -81,25 +82,23 @@ void	signals_set_handler(void)
 
 t_signal_data	signals_wait_for_data(void)
 {
+	unsigned int	tries;
 	sig_atomic_t	data;
 
+	tries = 4000;
 	data = g_sig_data;
 	while (data == 0)
 	{
+		if (tries-- == 0)
+			return ((t_signal_data){.timeout = 1, .bit = 0, .sender = 0});
 		usleep(200);
 		data = g_sig_data;
 	}
 	g_sig_data = 0;
 	if (data > 0)
-		return ((t_signal_data){
-			.bit = 0,
-			.sender = data,
-		});
+		return ((t_signal_data){.timeout = 0, .bit = 0, .sender = data});
 	else
-		return ((t_signal_data){
-			.bit = 1,
-			.sender = -data,
-		});
+		return ((t_signal_data){.timeout = 0, .bit = 1, .sender = -data});
 }
 
 bool	signals_send_bit(pid_t recipient, bool bit)

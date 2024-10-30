@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:47 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/29 15:28:32 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/30 16:50:01 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,6 +34,8 @@ int	main(int argc, char *argv[])
 		if (!signals_send_bit(server, bit))
 			return (5);
 		signal_data = signals_wait_for_data();
+		if (signal_data.timeout)
+			return (6);
 		if (signal_data.sender != server)
 			return (3);
 		if (signal_data.bit == 1)

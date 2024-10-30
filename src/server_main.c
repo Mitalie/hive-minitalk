@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:50 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/29 15:33:24 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/30 17:39:09 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,19 @@
 #include "receive.h"
 #include "signals.h"
 #include "util.h"
+
+static bool	check_timeout(pid_t *client, bool timeout, t_receive_state *state)
+{
+	if (!timeout)
+		return (false);
+	if (*client)
+	{
+		receive_reset(state);
+		signals_send_bit(*client, 1);
+		*client = 0;
+	}
+	return (true);
+}
 
 static void	check_sender(pid_t *client, pid_t sender, t_receive_state *state)
 {
@@ -63,6 +76,8 @@ int	main(void)
 	while (1)
 	{
 		sig_data = signals_wait_for_data();
+		if (check_timeout(&client, sig_data.timeout, &receive_state))
+			continue ;
 		check_sender(&client, sig_data.sender, &receive_state);
 		try_receive_bit(&client, sig_data.bit, &receive_state);
 	}

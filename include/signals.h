@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/22 14:29:23 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/29 15:27:58 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/30 16:34:21 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,7 @@
 
 typedef struct s_signal_data
 {
+	bool	timeout;
 	bool	bit;
 	pid_t	sender;
 }	t_signal_data;
