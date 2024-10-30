@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/22 14:29:57 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/24 16:47:01 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/29 15:27:52 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,10 +101,12 @@ t_signal_data	signals_wait_for_data(void)
 		});
 }
 
-void	signals_send_bit(pid_t recipient, bool bit)
+bool	signals_send_bit(pid_t recipient, bool bit)
 {
+	int	sig;
+
+	sig = SIGUSR1;
 	if (bit)
-		kill(recipient, SIGUSR2);
-	else
-		kill(recipient, SIGUSR1);
+		sig = SIGUSR2;
+	return (kill(recipient, sig) == 0);
 }

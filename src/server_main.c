@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:50 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/29 14:43:14 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/29 15:33:24 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -42,7 +42,11 @@ static void	try_receive_bit(pid_t *client, bool bit, t_receive_state *state)
 		*client = 0;
 		return ;
 	}
-	signals_send_bit(*client, 0);
+	if (!signals_send_bit(*client, 0))
+	{
+		receive_reset(state);
+		*client = 0;
+	}
 }
 
 int	main(void)

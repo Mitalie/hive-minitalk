@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/22 14:29:23 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/24 16:47:02 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/29 15:27:58 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -24,6 +24,6 @@ typedef struct s_signal_data
 
 void			signals_set_handler(void);
 t_signal_data	signals_wait_for_data(void);
-void			signals_send_bit(pid_t recipient, bool bit);
+bool			signals_send_bit(pid_t recipient, bool bit);
 
 #endif
