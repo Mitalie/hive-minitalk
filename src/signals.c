@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/22 14:29:57 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/29 15:27:52 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/30 16:31:42 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,12 +56,13 @@ void	signals_set_handler(void)
 	a lot of CPU time doing nothing. A timed sleep reduces CPU usage while also
 	ensuring the process eventually wakes up and re-checks `g_sig_data`.
 
-	The shortest sleep we can do is usleep(1) as nanosleep is not allowed for
-	the project. On school computers it works out to be 50-60 microseconds due
-	to timer granularity limits or various overheads, and makes the process
-	consume 17% of a CPU core at idle clocks and 5% at full speed. Longer sleep
-	time could reduce CPU usage further but causes longer delays whenever the
-	signal happens to arrive before the sleep call.
+	The shortest sleep we can do is usleep(1). On school computers it works out
+	to looping every 50-60 microseconds due to timer granularity limits or
+	various overheads, and makes the process consume 17% of a CPU core at idle
+	clocks and 5% at full speed. To reduce CPU usage, we use usleep(200) which
+	results in 280-290 microseconds interval and 5% idle / 1.5% full speed CPU
+	usage. Even longer sleep time could reduce CPU usage further but causes
+	longer delays whenever the signal happens to arrive before the sleep call.
 
 	There are better tools for this than an asynchronous signal handler plus
 	sleep, (e.g. block the signal, then use sigsuspend or sigtimedwait to handle
@@ -85,7 +86,7 @@ t_signal_data	signals_wait_for_data(void)
 	data = g_sig_data;
 	while (data == 0)
 	{
-		usleep(1);
+		usleep(200);
 		data = g_sig_data;
 	}
 	g_sig_data = 0;
