@@ -6,7 +6,7 @@
 #    By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/09/26 13:32:33 by amakinen          #+#    #+#              #
-#    Updated: 2024/10/24 17:50:14 by amakinen         ###   ########.fr        #
+#    Updated: 2024/10/31 17:25:17 by amakinen         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -21,7 +21,6 @@ SRCS_C := $(addprefix $(SRCDIR)/,\
 	client_main.c \
 	send.c \
 	util_parse_int.c \
-	util_strlen.c \
 )
 SRCS_S := $(addprefix $(SRCDIR)/,\
 	server_main.c \
@@ -30,6 +29,7 @@ SRCS_S := $(addprefix $(SRCDIR)/,\
 )
 SRCS_SHARED := $(addprefix $(SRCDIR)/,\
 	signals.c \
+	util_strlen.c \
 )
 OBJS_C := $(SRCS_C:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 OBJS_S := $(SRCS_S:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
