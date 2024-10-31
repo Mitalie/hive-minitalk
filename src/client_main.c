@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:47 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/31 18:07:54 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/31 19:25:43 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,12 +47,36 @@ static int	status_msg(t_client_status status)
 	return (status);
 }
 
+int	do_send(pid_t server, t_send_state *send_state)
+{
+	t_signal_data	signal_data;
+	bool			bit;
+	bool			first;
+
+	first = true;
+	while (!send_done(send_state))
+	{
+		bit = send_get_bit(send_state);
+		if (!signals_send_bit(server, bit))
+			return (status_msg(MT_CLIENT_SEND_ERROR));
+		signal_data = signals_wait_for_data();
+		if (signal_data.timeout && first)
+			signal_data = signals_wait_for_data();
+		if (signal_data.timeout)
+			return (status_msg(MT_CLIENT_TIMEOUT));
+		if (signal_data.sender != server)
+			return (status_msg(MT_CLIENT_UNEXPECTED_SIGNAL));
+		if (signal_data.bit == 1)
+			return (status_msg(MT_CLIENT_SERVER_ERROR));
+		first = false;
+	}
+	return (status_msg(MT_CLIENT_SUCCESS));
+}
+
 int	main(int argc, char *argv[])
 {
 	pid_t			server;
 	t_send_state	send_state;
-	t_signal_data	signal_data;
-	bool			bit;
 
 	if (argc != 3)
 		return (status_msg(MT_CLIENT_ARGC));
@@ -60,18 +84,5 @@ int	main(int argc, char *argv[])
 		return (status_msg(MT_CLIENT_INVALID_PID));
 	send_init(&send_state, (unsigned char *)argv[2], util_strlen(argv[2]));
 	signals_set_handler();
-	while (!send_done(&send_state))
-	{
-		bit = send_get_bit(&send_state);
-		if (!signals_send_bit(server, bit))
-			return (status_msg(MT_CLIENT_SEND_ERROR));
-		signal_data = signals_wait_for_data();
-		if (signal_data.timeout)
-			return (status_msg(MT_CLIENT_TIMEOUT));
-		if (signal_data.sender != server)
-			return (status_msg(MT_CLIENT_UNEXPECTED_SIGNAL));
-		if (signal_data.bit == 1)
-			return (status_msg(MT_CLIENT_SERVER_ERROR));
-	}
-	return (status_msg(MT_CLIENT_SUCCESS));
+	return (do_send(server, &send_state));
 }
