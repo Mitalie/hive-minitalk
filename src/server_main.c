@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:50 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/31 18:09:39 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/31 19:03:30 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -75,14 +75,28 @@ static bool	check_timeout(pid_t *client, bool timeout, t_receive_state *state)
 	return (true);
 }
 
+/*
+	The previous client was already sent bit 0 and will send another data bit to
+	us. Wait for it and discard it before proceeding with the new client. Any
+	further conflicting senders are rejected immediately.
+*/
 static void	check_sender(pid_t *client, pid_t sender, t_receive_state *state)
 {
+	t_signal_data	sig_data;
+
 	if (sender != *client)
 	{
 		if (*client != 0)
 		{
 			status_msg(MT_SERVER_CHANGED_CLIENT, *client);
 			receive_reset(state);
+			while (1)
+			{
+				sig_data = signals_wait_for_data();
+				if (sig_data.timeout || sig_data.sender == *client)
+					break ;
+				signals_send_bit(sig_data.sender, 1);
+			}
 			signals_send_bit(*client, 1);
 		}
 		status_msg(MT_SERVER_NEW_CLIENT, sender);
