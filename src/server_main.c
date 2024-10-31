@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:50 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/31 17:33:21 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/31 18:04:25 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,15 +37,28 @@ static const char	*g_status_msgs[MT_NUM_SERVER_STATUS] = {
 	"Sending signal failed, dropping client",
 };
 
+/*
+	This should only be called with a real PID (positive).
+	Make sure buf is long enough for the longest message:
+		strlen(msg) + 12 (space + positive int + newline).
+*/
 static void	status_msg(t_server_status status, pid_t pid)
 {
-	const char	*msg;
+	const char		*msg;
+	char			buf[80];
+	size_t			len;
 
 	msg = g_status_msgs[status];
-	write(STDERR_FILENO, msg, util_strlen(msg));
-	write(STDERR_FILENO, " ", 1);
-	util_write_int(STDERR_FILENO, pid);
-	write(STDERR_FILENO, "\n", 1);
+	len = 0;
+	while (msg[len])
+	{
+		buf[len] = msg[len];
+		len++;
+	}
+	buf[len++] = ' ';
+	len += util_utoa_arr(pid, buf + len);
+	buf[len++] = '\n';
+	write(STDERR_FILENO, buf, len);
 }
 
 static bool	check_timeout(pid_t *client, bool timeout, t_receive_state *state)

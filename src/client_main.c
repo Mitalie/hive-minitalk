@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:47 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/31 17:27:20 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/31 18:04:31 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,13 +29,13 @@ typedef enum e_client_status
 }	t_client_status;
 
 static const char	*g_status_msgs[MT_NUM_CLIENT_STATUS] = {
-	"Message delivered successfully",
-	"Expected 2 arguments, usage: ./client server_pid message",
-	"Invalid server PID",
-	"Failed to send signal to server",
-	"Timeout, no response from server",
-	"Unexpected SIGUSR1/2, not from server",
-	"Server reported error",
+	"Message delivered successfully\n",
+	"Expected 2 arguments, usage: ./client server_pid message\n",
+	"Invalid server PID\n",
+	"Failed to send signal to server\n",
+	"Timeout, no response from server\n",
+	"Unexpected SIGUSR1/2, not from server\n",
+	"Server reported error\n",
 };
 
 static int	status_msg(t_client_status status)
@@ -44,7 +44,6 @@ static int	status_msg(t_client_status status)
 
 	msg = g_status_msgs[status];
 	write(STDERR_FILENO, msg, util_strlen(msg));
-	write(STDERR_FILENO, "\n", 1);
 	return (status);
 }
 

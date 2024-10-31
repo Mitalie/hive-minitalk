@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/10/24 16:04:01 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/31 17:32:33 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/31 17:44:52 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,6 @@
 
 bool	util_parse_int(const char *str, int *value_out);
 size_t	util_strlen(const char *str);
-void	util_write_int(int fd, int n);
+int		util_utoa_arr(unsigned int n, char *arr);
 
 #endif
