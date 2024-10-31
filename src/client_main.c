@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:47 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/31 18:04:31 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/31 18:07:54 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -43,7 +43,7 @@ static int	status_msg(t_client_status status)
 	const char	*msg;
 
 	msg = g_status_msgs[status];
-	write(STDERR_FILENO, msg, util_strlen(msg));
+	write_all(STDERR_FILENO, msg, util_strlen(msg));
 	return (status);
 }
 

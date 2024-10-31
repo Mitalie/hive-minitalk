@@ -6,7 +6,7 @@
 #    By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/09/26 13:32:33 by amakinen          #+#    #+#              #
-#    Updated: 2024/10/31 18:04:18 by amakinen         ###   ########.fr        #
+#    Updated: 2024/10/31 18:08:09 by amakinen         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -30,6 +30,7 @@ SRCS_S := $(addprefix $(SRCDIR)/,\
 )
 SRCS_SHARED := $(addprefix $(SRCDIR)/,\
 	signals.c \
+	util_write.c \
 )
 OBJS_C := $(SRCS_C:$(SRCDIR)/%.c=$(OBJDIR)/%.o)
 OBJS_S := $(SRCS_S:$(SRCDIR)/%.c=$(OBJDIR)/%.o)

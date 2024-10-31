@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:50 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/31 18:04:25 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/31 18:09:39 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -58,7 +58,7 @@ static void	status_msg(t_server_status status, pid_t pid)
 	buf[len++] = ' ';
 	len += util_utoa_arr(pid, buf + len);
 	buf[len++] = '\n';
-	write(STDERR_FILENO, buf, len);
+	write_all(STDERR_FILENO, buf, len);
 }
 
 static bool	check_timeout(pid_t *client, bool timeout, t_receive_state *state)
@@ -102,7 +102,7 @@ static void	try_receive_bit(pid_t *client, bool bit, t_receive_state *state)
 	}
 	if (receive_done(state))
 	{
-		write(STDOUT_FILENO, state->buf, state->len);
+		write_all(STDOUT_FILENO, state->buf, state->len);
 		status_msg(MT_SERVER_SUCCESS, *client);
 		receive_reset(state);
 		signals_send_bit(*client, 0);
