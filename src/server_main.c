@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:50 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/31 19:03:30 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/31 19:58:00 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,11 +78,15 @@ static bool	check_timeout(pid_t *client, bool timeout, t_receive_state *state)
 /*
 	The previous client was already sent bit 0 and will send another data bit to
 	us. Wait for it and discard it before proceeding with the new client. Any
-	further conflicting senders are rejected immediately.
+	further conflicting senders are rejected immediately. Wait may end up
+	slightly shorter than expected as signals interrupt the sleep, but we can't
+	do better without access to clocks, and there are bigger problems if there
+	are enough conflicting signals and client slowdown that this matters.
 */
 static void	check_sender(pid_t *client, pid_t sender, t_receive_state *state)
 {
 	t_signal_data	sig_data;
+	unsigned int	wait_tries_left;
 
 	if (sender != *client)
 	{
@@ -90,11 +94,13 @@ static void	check_sender(pid_t *client, pid_t sender, t_receive_state *state)
 		{
 			status_msg(MT_SERVER_CHANGED_CLIENT, *client);
 			receive_reset(state);
+			wait_tries_left = WAIT_TRIES;
 			while (1)
 			{
-				sig_data = signals_wait_for_data();
-				if (sig_data.timeout || sig_data.sender == *client)
+				sig_data = signals_wait_for_data(wait_tries_left);
+				if (sig_data.tries_left == 0 || sig_data.sender == *client)
 					break ;
+				wait_tries_left = sig_data.tries_left;
 				signals_send_bit(sig_data.sender, 1);
 			}
 			signals_send_bit(*client, 1);
@@ -143,8 +149,8 @@ int	main(void)
 	client = 0;
 	while (1)
 	{
-		sig_data = signals_wait_for_data();
-		if (check_timeout(&client, sig_data.timeout, &receive_state))
+		sig_data = signals_wait_for_data(WAIT_TRIES);
+		if (check_timeout(&client, sig_data.tries_left == 0, &receive_state))
 			continue ;
 		check_sender(&client, sig_data.sender, &receive_state);
 		try_receive_bit(&client, sig_data.bit, &receive_state);

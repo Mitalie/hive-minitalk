@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:47 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/31 19:25:43 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/10/31 19:54:27 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -47,28 +47,30 @@ static int	status_msg(t_client_status status)
 	return (status);
 }
 
-int	do_send(pid_t server, t_send_state *send_state)
+/*
+	First wait is longer as the server may need to wait to confirm that the
+	previous client has been dropped.
+*/
+static int	do_send(pid_t server, t_send_state *send_state)
 {
 	t_signal_data	signal_data;
 	bool			bit;
-	bool			first;
+	unsigned int	tries;
 
-	first = true;
+	tries = WAIT_TRIES * 2;
 	while (!send_done(send_state))
 	{
 		bit = send_get_bit(send_state);
 		if (!signals_send_bit(server, bit))
 			return (status_msg(MT_CLIENT_SEND_ERROR));
-		signal_data = signals_wait_for_data();
-		if (signal_data.timeout && first)
-			signal_data = signals_wait_for_data();
-		if (signal_data.timeout)
+		signal_data = signals_wait_for_data(tries);
+		tries = WAIT_TRIES;
+		if (signal_data.tries_left == 0)
 			return (status_msg(MT_CLIENT_TIMEOUT));
 		if (signal_data.sender != server)
 			return (status_msg(MT_CLIENT_UNEXPECTED_SIGNAL));
 		if (signal_data.bit == 1)
 			return (status_msg(MT_CLIENT_SERVER_ERROR));
-		first = false;
 	}
 	return (status_msg(MT_CLIENT_SUCCESS));
 }
