@@ -100,6 +100,29 @@ most significant bit first. No null terminator is included. After the entire
 message is received, server prints it, releases the buffer, and is ready to
 receive another length-prefixed message, possibly from a different client.
 
+## Practical improvements
+
+The server allocates heap memory for the incoming message after receiving the
+length. If this allocation fails, the server is unable to handle the message.
+The server informs the client of the error with SIGUSR1 so it can stop sending
+and display an error to the user instead of sending its message into the void.
+
+Multiple simultaneous clients are not supported because simultaneous signals to
+the server could be lost. As soon as even one signal arrives from a sender other
+than the active client, we can't be sure we haven't lost a signal and abort the
+transmission with an error. However we haven't yet lost a signal from the other
+sender, so we consider the received signal a start of new transmission. There
+might still be an incoming signal from the previous active client, so the server
+waits until its arrival or timeout before proceeding with the new client.
+
+A client given incorrect server process id or a process whose peer dies during
+transmission could get stuck waiting for a reply. We detect failures to send
+a signal, but the other process could die after sending, or an incorrect process
+might just never reply. To avoid getting stuck, we implement a timeout after
+which the transmission is considered failed. The assignment doesn't allow any
+clock or timer functions, so we get a rough estimate by counting usleep calls
+while waiting for a signal.
+
 ## Additional ideas
 
 These ideas might be useful for supporting multiple simultaneous clients, or for
