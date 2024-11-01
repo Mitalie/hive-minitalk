@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:50 by amakinen          #+#    #+#             */
-/*   Updated: 2024/11/01 16:09:34 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/11/01 16:24:20 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -69,7 +69,6 @@ static bool	check_timeout(pid_t *client, bool timeout, t_receive_state *state)
 	{
 		status_msg(MT_SERVER_TIMEOUT, *client);
 		receive_reset(state);
-		signals_send_bit(*client, 1);
 		*client = 0;
 	}
 	return (true);
