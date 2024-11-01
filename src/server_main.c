@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:50 by amakinen          #+#    #+#             */
-/*   Updated: 2024/10/31 19:58:00 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/11/01 15:26:07 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -116,7 +116,7 @@ static void	try_receive_bit(pid_t *client, bool bit, t_receive_state *state)
 	{
 		receive_reset(state);
 		signals_send_bit(*client, 1);
-		status_msg(MT_SERVER_TIMEOUT, *client);
+		status_msg(MT_SERVER_MALLOC_ERROR, *client);
 		*client = 0;
 		return ;
 	}
