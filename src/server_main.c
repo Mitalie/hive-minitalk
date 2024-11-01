@@ -6,7 +6,7 @@
 /*   By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2024/09/26 13:39:50 by amakinen          #+#    #+#             */
-/*   Updated: 2024/11/01 15:26:07 by amakinen         ###   ########.fr       */
+/*   Updated: 2024/11/01 16:09:34 by amakinen         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -21,7 +21,7 @@ typedef enum e_server_status
 	MT_SERVER_SUCCESS,
 	MT_SERVER_TIMEOUT,
 	MT_SERVER_NEW_CLIENT,
-	MT_SERVER_CHANGED_CLIENT,
+	MT_SERVER_CONFLICT,
 	MT_SERVER_MALLOC_ERROR,
 	MT_SERVER_SEND_ERROR,
 	MT_NUM_SERVER_STATUS,
@@ -32,7 +32,7 @@ static const char	*g_status_msgs[MT_NUM_SERVER_STATUS] = {
 	"Message received successfully from client",
 	"Timeout, no response from client, dropping client",
 	"Receiving message from client",
-	"Signal from a different client, dropping client",
+	"Conflicting signal (may break reception), rejecting sender",
 	"Memory allocation failed, dropping client",
 	"Sending signal failed, dropping client",
 };
@@ -76,38 +76,25 @@ static bool	check_timeout(pid_t *client, bool timeout, t_receive_state *state)
 }
 
 /*
-	The previous client was already sent bit 0 and will send another data bit to
-	us. Wait for it and discard it before proceeding with the new client. Any
-	further conflicting senders are rejected immediately. Wait may end up
-	slightly shorter than expected as signals interrupt the sleep, but we can't
-	do better without access to clocks, and there are bigger problems if there
-	are enough conflicting signals and client slowdown that this matters.
+	Reject any conflicting senders during active reception, and attempt to
+	continue it. If a signal from the active client is lost, both client and
+	server will fail with timeout and server becomes ready for another client.
 */
-static void	check_sender(pid_t *client, pid_t sender, t_receive_state *state)
+static bool	check_sender(pid_t *client, pid_t sender)
 {
-	t_signal_data	sig_data;
-	unsigned int	wait_tries_left;
-
-	if (sender != *client)
+	if (*client == 0)
 	{
-		if (*client != 0)
-		{
-			status_msg(MT_SERVER_CHANGED_CLIENT, *client);
-			receive_reset(state);
-			wait_tries_left = WAIT_TRIES;
-			while (1)
-			{
-				sig_data = signals_wait_for_data(wait_tries_left);
-				if (sig_data.tries_left == 0 || sig_data.sender == *client)
-					break ;
-				wait_tries_left = sig_data.tries_left;
-				signals_send_bit(sig_data.sender, 1);
-			}
-			signals_send_bit(*client, 1);
-		}
 		status_msg(MT_SERVER_NEW_CLIENT, sender);
 		*client = sender;
+		return (true);
 	}
+	if (*client != sender)
+	{
+		status_msg(MT_SERVER_CONFLICT, sender);
+		signals_send_bit(sender, 1);
+		return (false);
+	}
+	return (true);
 }
 
 static void	try_receive_bit(pid_t *client, bool bit, t_receive_state *state)
@@ -152,7 +139,7 @@ int	main(void)
 		sig_data = signals_wait_for_data(WAIT_TRIES);
 		if (check_timeout(&client, sig_data.tries_left == 0, &receive_state))
 			continue ;
-		check_sender(&client, sig_data.sender, &receive_state);
-		try_receive_bit(&client, sig_data.bit, &receive_state);
+		if (check_sender(&client, sig_data.sender))
+			try_receive_bit(&client, sig_data.bit, &receive_state);
 	}
 }
