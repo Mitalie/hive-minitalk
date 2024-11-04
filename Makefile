@@ -6,7 +6,7 @@
 #    By: amakinen <amakinen@student.hive.fi>        +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2024/09/26 13:32:33 by amakinen          #+#    #+#              #
-#    Updated: 2024/10/31 18:08:09 by amakinen         ###   ########.fr        #
+#    Updated: 2024/11/04 14:23:12 by amakinen         ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -45,9 +45,11 @@ $(NAME): client server
 # Generic utility targets
 .DEFAULT_GOAL := all
 
-.PHONY: all clean fclean re
+.PHONY: all bonus clean fclean re
 
 all: $(NAME)
+
+bonus: $(NAME)
 
 clean:
 	rm -rf $(OBJDIR)
